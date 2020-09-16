@@ -11,9 +11,7 @@ use serde::Serialize;
 #[test]
 fn test_de_ser() {
 
-    let contents = fs::read_to_string("./example_test.scen.json").unwrap();
-
-    // println!("With text:\n{}", contents);
+    let contents = fs::read_to_string("./example.scen.json").unwrap();
 
     let scen: Scenario = serde_json::from_str(contents.as_str()).unwrap();
 
