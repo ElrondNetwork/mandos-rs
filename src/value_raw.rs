@@ -1,45 +1,29 @@
 
-use super::interpret_string;
 use std::collections::BTreeMap;
 use std::fmt;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
-
-pub fn interpret_subtree(vst: &ValueSubTree) -> Vec<u8> {
-    match vst {
-        ValueSubTree::Str(s) => interpret_string(s),
-        ValueSubTree::List(l) => {
-            let mut concat = Vec::<u8>::new();
-            for item in l.iter() {
-                concat.extend_from_slice(interpret_subtree(item).as_slice());
-            }
-            concat
-        },
-        ValueSubTree::Map(m) => {
-            let mut concat = Vec::<u8>::new();
-            for (_, value) in m.iter() {
-                concat.extend_from_slice(interpret_subtree(value).as_slice());
-            }
-            concat
-        }
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct BytesValue {
-    pub value: Vec<u8>,
-    pub original: ValueSubTree,
-}
-
-// TODO: these will not remain aliases
-pub type BigUintValue = BytesValue;
-pub type U64Value = BytesValue;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ValueSubTree {
     Str(String),
     List(Vec<ValueSubTree>),
     Map(BTreeMap<String, ValueSubTree>),
+}
+
+impl ValueSubTree {
+    pub fn is_empty_string(&self) -> bool {
+        match self {
+            ValueSubTree::Str(s) => s.is_empty(),
+            _ => false,
+        }
+    }
+}
+
+impl Default for ValueSubTree {
+    fn default() -> Self {
+        ValueSubTree::Str(String::from(""))
+    }
 }
 
 impl Serialize for ValueSubTree {
@@ -64,15 +48,6 @@ impl Serialize for ValueSubTree {
                 map.end()
             }
         }
-    }
-}
-
-impl Serialize for BytesValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.original.serialize(serializer)
     }
 }
 
@@ -131,61 +106,48 @@ impl<'de> Deserialize<'de> for ValueSubTree {
     }
 }
 
-impl<'de> Deserialize<'de> for BytesValue {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let original = ValueSubTree::deserialize(deserializer)?;
-        Ok(BytesValue{
-            value: interpret_subtree(&original),
-            original
-        })
-    }
-}
-
-pub enum CheckBytesValue {
+pub enum CheckBytesValueRaw {
     DefaultStar,
     Star,
-    Equal(BytesValue),
+    Equal(ValueSubTree),
 }
 
-impl CheckBytesValue {
+impl CheckBytesValueRaw {
     pub fn is_star(&self) -> bool {
-        if let CheckBytesValue::Star | CheckBytesValue::DefaultStar = self { true } else { false }
+        if let CheckBytesValueRaw::Star | CheckBytesValueRaw::DefaultStar = self { true } else { false }
     }
 
     pub fn is_default_star(&self) -> bool {
-        if let CheckBytesValue::DefaultStar = self { true } else { false }
+        if let CheckBytesValueRaw::DefaultStar = self { true } else { false }
     }
 }
 
-impl Default for CheckBytesValue {
+impl Default for CheckBytesValueRaw {
     fn default() -> Self {
-        CheckBytesValue::DefaultStar
+        CheckBytesValueRaw::DefaultStar
     }
 }
 
-impl Serialize for CheckBytesValue {
+impl Serialize for CheckBytesValueRaw {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         match self {
-            CheckBytesValue::Star | CheckBytesValue::DefaultStar => serializer.serialize_str("*"),
-            CheckBytesValue::Equal(bytes_value) => bytes_value.serialize(serializer),
+            CheckBytesValueRaw::Star | CheckBytesValueRaw::DefaultStar => serializer.serialize_str("*"),
+            CheckBytesValueRaw::Equal(bytes_value) => bytes_value.serialize(serializer),
         }
     }
 }
 
-struct CheckBytesValueVisitor;
+struct CheckBytesValueRawVisitor;
 
-impl<'de> Visitor<'de> for CheckBytesValueVisitor {
-    type Value = CheckBytesValue;
+impl<'de> Visitor<'de> for CheckBytesValueRawVisitor {
+    type Value = CheckBytesValueRaw;
 
     // Format a message stating what data this Visitor expects to receive.
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("serialized CheckBytesValue")
+        formatter.write_str("serialized CheckBytesValueRaw")
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -193,13 +155,10 @@ impl<'de> Visitor<'de> for CheckBytesValueVisitor {
         E: de::Error,
     {
         if value == "*" {
-            Ok(CheckBytesValue::Star)
+            Ok(CheckBytesValueRaw::Star)
         } else {
-            let original = ValueSubTreeVisitor.visit_str(value)?;
-            Ok(CheckBytesValue::Equal(BytesValue{
-                value: interpret_subtree(&original),
-                original
-            }))
+            let vst = ValueSubTreeVisitor.visit_str(value)?;
+            Ok(CheckBytesValueRaw::Equal(vst))
         }
     }
 
@@ -207,34 +166,24 @@ impl<'de> Visitor<'de> for CheckBytesValueVisitor {
     where
         A: SeqAccess<'de>,
     {
-        let original = ValueSubTreeVisitor.visit_seq(seq)?;
-        Ok(CheckBytesValue::Equal(BytesValue{
-            value: interpret_subtree(&original),
-            original
-        }))
+        let vst = ValueSubTreeVisitor.visit_seq(seq)?;
+        Ok(CheckBytesValueRaw::Equal(vst))
     }
 
     fn visit_map<M>(self, access: M) -> Result<Self::Value, M::Error>
     where
         M: MapAccess<'de>,
     {
-        let original = ValueSubTreeVisitor.visit_map(access)?;
-        Ok(CheckBytesValue::Equal(BytesValue{
-            value: interpret_subtree(&original),
-            original
-        }))
+        let vst = ValueSubTreeVisitor.visit_map(access)?;
+        Ok(CheckBytesValueRaw::Equal(vst))
     }
 }
 
-impl<'de> Deserialize<'de> for CheckBytesValue {
+impl<'de> Deserialize<'de> for CheckBytesValueRaw {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_any(CheckBytesValueVisitor)
+        deserializer.deserialize_any(CheckBytesValueRawVisitor)
     }
 }
-
-pub type CheckBigUintValue = CheckBytesValue;
-pub type CheckU64Value = CheckBytesValue;
-

@@ -13,7 +13,7 @@ fn test_de_ser() {
 
     let contents = fs::read_to_string("./example.scen.json").unwrap();
 
-    let scen: Scenario = serde_json::from_str(contents.as_str()).unwrap();
+    let scen: ScenarioRaw = serde_json::from_str(contents.as_str()).unwrap();
 
     // let serialized = serde_json::to_string_pretty(&scen).unwrap();
     let buf = Vec::new();
@@ -31,12 +31,12 @@ fn test_de_ser() {
 #[test]
 fn test_ser() {
 
-    let scen = Scenario{
+    let scen = ScenarioRaw{
         name: None,
         comment: Some("comment".to_string()),
         check_gas: Some(false),
         steps: vec![
-            Step::ExternalSteps{
+            StepRaw::ExternalSteps{
                 path: String::from("hello.txt")
             }
         ]

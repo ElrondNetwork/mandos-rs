@@ -1,222 +1,264 @@
 use super::*;
-use serde::{Serialize, Deserialize};
 use std::collections::BTreeMap;
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Scenario {
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub check_gas: Option<bool>,
     pub steps: Vec<Step>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[serde(tag = "step")]
 pub enum Step {
     ExternalSteps {
         path: String,
     },
-    
-    #[serde(rename_all = "camelCase")]
     SetState {
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<String>,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         accounts: BTreeMap<String, Account>,
-        
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Vec::is_empty")]
         new_addresses: Vec<NewAddress>,
-        
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Vec::is_empty")]
         block_hashes: Vec<BytesValue>,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         previous_block_info: Option<BlockInfo>,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         current_block_info: Option<BlockInfo>,
     },
-
-    #[serde(rename_all = "camelCase")]
     ScCall {
         tx_id: BytesValue,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<BytesValue>,
-
         tx: TxCall,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         expect: Option<TxExpect>,
     },
-
-    #[serde(rename_all = "camelCase")]
     ScDeploy {
         tx_id: BytesValue,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<BytesValue>,
-
         tx: TxDeploy,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         expect: Option<TxExpect>,
     },
-
-    #[serde(rename_all = "camelCase")]
     Transfer {
         tx_id: BytesValue,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<BytesValue>,
-
         tx: TxTransfer,
     },
-
-    #[serde(rename_all = "camelCase")]
     ValidatorReward {
         tx_id: BytesValue,
-
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<BytesValue>,
-
         tx: TxValidatorReward,
     },
-
     CheckState {
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        comment: Option<String>,
-
+        comment: Option<BytesValue>,
         accounts: CheckAccounts,
     },
-
     DumpState {
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
         comment: Option<BytesValue>,
     },
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<StepRaw> for Step {
+    fn interpret_from(from: StepRaw, context: &InterpreterContext) -> Self {
+        match from {
+            StepRaw::ExternalSteps {
+                path,
+            } => Step::ExternalSteps {
+                path
+            },
+            StepRaw::SetState {
+                comment,
+                accounts,
+                new_addresses,
+                block_hashes,
+                previous_block_info,
+                current_block_info,
+            } => Step::SetState {
+                comment,
+                accounts: accounts.into_iter().map(|(k, v)| (k.clone(), Account::interpret_from(v, context))).collect(),
+                new_addresses: new_addresses.into_iter().map(|t| NewAddress::interpret_from(t, context)).collect(),
+                block_hashes: block_hashes.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
+                previous_block_info: previous_block_info.map(|v| BlockInfo::interpret_from(v, context)),
+                current_block_info: current_block_info.map(|v| BlockInfo::interpret_from(v, context)),
+            },
+            StepRaw::ScCall {
+                tx_id,
+                comment,
+                tx,
+                expect,
+            } => Step::ScCall {
+                tx_id: BytesValue::interpret_from(tx_id, context),
+                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                tx: TxCall::interpret_from(tx, context),
+                expect: expect.map(|v| TxExpect::interpret_from(v, context)),
+            },
+            StepRaw::ScDeploy {
+                tx_id,
+                comment,
+                tx,
+                expect,
+            } => Step::ScDeploy {
+                tx_id: BytesValue::interpret_from(tx_id, context),
+                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                tx: TxDeploy::interpret_from(tx, context),
+                expect: expect.map(|v| TxExpect::interpret_from(v, context)),
+            },
+            StepRaw::Transfer {
+                tx_id,
+                comment,
+                tx,
+            } => Step::Transfer {
+                tx_id: BytesValue::interpret_from(tx_id, context),
+                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                tx: TxTransfer::interpret_from(tx, context),
+            },
+            StepRaw::ValidatorReward {
+                tx_id,
+                comment,
+                tx,
+            } => Step::ValidatorReward {
+                tx_id: BytesValue::interpret_from(tx_id, context),
+                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                tx: TxValidatorReward::interpret_from(tx, context),
+            },
+            StepRaw::CheckState {
+                comment,
+                accounts,
+            } => Step::CheckState {
+                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                accounts: CheckAccounts::interpret_from(accounts, context),
+            },
+            StepRaw::DumpState {
+                comment,
+            } => Step::DumpState {
+                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+            },
+        }
+    }
+}
+
 pub struct NewAddress {
     pub creator_address: BytesValue,
     pub creator_nonce: U64Value,
     pub new_address: BytesValue,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<NewAddressRaw> for NewAddress {
+    fn interpret_from(from: NewAddressRaw, context: &InterpreterContext) -> Self {
+        NewAddress {
+            creator_address: BytesValue::interpret_from(from.creator_address, context),
+            creator_nonce: U64Value::interpret_from(from.creator_nonce, context),
+            new_address: BytesValue::interpret_from(from.new_address, context),
+        }
+    }
+}
+
 pub struct BlockInfo {
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub block_timestamp: Option<U64Value>,
-    
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub block_nonce: Option<U64Value>,
-    
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub block_round: Option<U64Value>,
-    
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub block_epoch: Option<U64Value>,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<BlockInfoRaw> for BlockInfo {
+    fn interpret_from(from: BlockInfoRaw, context: &InterpreterContext) -> Self {
+        BlockInfo {
+            block_timestamp: from.block_timestamp.map(|v| U64Value::interpret_from(v, context)),
+            block_nonce: from.block_nonce.map(|v| U64Value::interpret_from(v, context)),
+            block_round: from.block_round.map(|v| U64Value::interpret_from(v, context)),
+            block_epoch: from.block_epoch.map(|v| U64Value::interpret_from(v, context)),
+        }
+    }
+}
+
 pub struct TxCall {
     pub from: BytesValue,
     pub to: BytesValue,
     pub value: BigUintValue,
     pub function: String,
-
-    #[serde(default)]
     pub arguments: Vec<BytesValue>,
-
     pub gas_limit: U64Value,
     pub gas_price: U64Value,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<TxCallRaw> for TxCall {
+    fn interpret_from(from: TxCallRaw, context: &InterpreterContext) -> Self {
+        TxCall {
+            from: BytesValue::interpret_from(from.from, context),
+            to: BytesValue::interpret_from(from.to, context),
+            value: BigUintValue::interpret_from(from.value, context),
+            function: from.function,
+            arguments: from.arguments.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
+            gas_limit: U64Value::interpret_from(from.gas_limit, context),
+            gas_price: U64Value::interpret_from(from.gas_price, context),
+        }
+    }
+}
+
 pub struct TxDeploy {
     pub from: BytesValue,
     pub value: BigUintValue,
-
     pub contract_code: BytesValue,
-
-    #[serde(default)]
     pub arguments: Vec<BytesValue>,
-
     pub gas_limit: U64Value,
     pub gas_price: U64Value,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<TxDeployRaw> for TxDeploy {
+    fn interpret_from(from: TxDeployRaw, context: &InterpreterContext) -> Self {
+        TxDeploy {
+            from: BytesValue::interpret_from(from.from, context),
+            value: BigUintValue::interpret_from(from.value, context),
+            contract_code: BytesValue::interpret_from(from.contract_code, context),
+            arguments: from.arguments.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
+            gas_limit: U64Value::interpret_from(from.gas_limit, context),
+            gas_price: U64Value::interpret_from(from.gas_price, context),
+        }
+    }
+}
+
 pub struct TxTransfer {
     pub from: BytesValue,
     pub to: BytesValue,
     pub value: BigUintValue,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<TxTransferRaw> for TxTransfer {
+    fn interpret_from(from: TxTransferRaw, context: &InterpreterContext) -> Self {
+        TxTransfer {
+            from: BytesValue::interpret_from(from.from, context),
+            to: BytesValue::interpret_from(from.to, context),
+            value: BigUintValue::interpret_from(from.value, context),
+        }
+    }
+}
+
 pub struct TxValidatorReward {
     pub to: BytesValue,
     pub value: BigUintValue,
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+impl InterpretableFrom<TxValidatorRewardRaw> for TxValidatorReward {
+    fn interpret_from(from: TxValidatorRewardRaw, context: &InterpreterContext) -> Self {
+        TxValidatorReward {
+            to: BytesValue::interpret_from(from.to, context),
+            value: BigUintValue::interpret_from(from.value, context),
+        }
+    }
+}
+
 pub struct TxExpect {
-
-    #[serde(default)]
     pub out: Vec<BytesValue>,
-
     pub status: U64Value,
-
     pub logs: CheckLogs,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<BytesValue>,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub gas: Option<CheckU64Value>,
-
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub refund: Option<CheckU64Value>,
 
 }
 
-
+impl InterpretableFrom<TxExpectRaw> for TxExpect {
+    fn interpret_from(from: TxExpectRaw, context: &InterpreterContext) -> Self {
+        TxExpect {
+            out: from.out.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
+            status: U64Value::interpret_from(from.status, context),
+            logs: CheckLogs::interpret_from(from.logs, context),
+            message: from.message.map(|v| BytesValue::interpret_from(v, context)),
+            gas: from.gas.map(|v| CheckU64Value::interpret_from(v, context)),
+            refund: from.refund.map(|v| CheckU64Value::interpret_from(v, context)),
+        }
+    }
+}
