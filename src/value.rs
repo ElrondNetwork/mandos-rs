@@ -1,26 +1,24 @@
-use super::interpret_string;
+use super::value_interpreter::*;
 use super::value_raw::*;
-
-pub struct InterpreterContext;
 
 pub trait InterpretableFrom<T> {
     fn interpret_from(from: T, context: &InterpreterContext) -> Self;
 }
 
-pub fn interpret_subtree(vst: &ValueSubTree) -> Vec<u8> {
+pub fn interpret_subtree(vst: &ValueSubTree, context: &InterpreterContext) -> Vec<u8> {
     match vst {
-        ValueSubTree::Str(s) => interpret_string(s),
+        ValueSubTree::Str(s) => interpret_string(s, context),
         ValueSubTree::List(l) => {
             let mut concat = Vec::<u8>::new();
             for item in l.iter() {
-                concat.extend_from_slice(interpret_subtree(item).as_slice());
+                concat.extend_from_slice(interpret_subtree(item, context).as_slice());
             }
             concat
         },
         ValueSubTree::Map(m) => {
             let mut concat = Vec::<u8>::new();
             for (_, value) in m.iter() {
-                concat.extend_from_slice(interpret_subtree(value).as_slice());
+                concat.extend_from_slice(interpret_subtree(value, context).as_slice());
             }
             concat
         }
@@ -35,9 +33,9 @@ pub struct BytesValue {
 
 
 impl InterpretableFrom<ValueSubTree> for BytesValue {
-    fn interpret_from(from: ValueSubTree, _context: &InterpreterContext) -> Self {
+    fn interpret_from(from: ValueSubTree, context: &InterpreterContext) -> Self {
         BytesValue {
-            value: interpret_subtree(&from),
+            value: interpret_subtree(&from, context),
             original: from,
         }
     }
