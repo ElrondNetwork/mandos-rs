@@ -1,5 +1,7 @@
 use super::value_interpreter::*;
 use super::value_raw::*;
+use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 
 pub trait InterpretableFrom<T> {
     fn interpret_from(from: T, context: &InterpreterContext) -> Self;
@@ -41,52 +43,69 @@ impl InterpretableFrom<ValueSubTree> for BytesValue {
     }
 }
 
-// TODO: these will not remain aliases
-pub type BigUintValue = BytesValue;
-pub type U64Value = BytesValue;
-
-
-pub enum CheckBytesValue {
-    DefaultStar,
-    Star,
-    Equal(BytesValue),
+pub struct BigUintValue {
+    pub value: BigUint,
+    pub original: ValueSubTree,
 }
 
-impl CheckBytesValue {
-    pub fn is_star(&self) -> bool {
-        if let CheckBytesValue::Star | CheckBytesValue::DefaultStar = self { true } else { false }
-    }
-
-    pub fn is_default_star(&self) -> bool {
-        if let CheckBytesValue::DefaultStar = self { true } else { false }
-    }
-}
-
-impl Default for CheckBytesValue {
-    fn default() -> Self {
-        CheckBytesValue::DefaultStar
-    }
-}
-
-impl InterpretableFrom<ValueSubTree> for CheckBytesValue {
+impl InterpretableFrom<ValueSubTree> for BigUintValue {
     fn interpret_from(from: ValueSubTree, context: &InterpreterContext) -> Self {
-        match &from {
-            ValueSubTree::Str(s) => {
-                if s == "" {
-                    CheckBytesValue::DefaultStar
-                } else if s == "*" {
-                    CheckBytesValue::Star
-                } else {
-                    CheckBytesValue::Equal(BytesValue::interpret_from(from, context))
-                }
-            },
-            ValueSubTree::List(_) => CheckBytesValue::Equal(BytesValue::interpret_from(from, context)),
-            ValueSubTree::Map(_) => CheckBytesValue::Equal(BytesValue::interpret_from(from, context)),
+        let bytes = interpret_subtree(&from, context);
+        BigUintValue {
+            value: BigUint::from_bytes_be(&bytes),
+            original: from,
         }
     }
 }
 
+pub struct U64Value {
+    pub value: u64,
+    pub original: ValueSubTree,
+}
 
-pub type CheckBigUintValue = CheckBytesValue;
-pub type CheckU64Value = CheckBytesValue;
+impl InterpretableFrom<ValueSubTree> for U64Value {
+    fn interpret_from(from: ValueSubTree, context: &InterpreterContext) -> Self {
+        let bytes = interpret_subtree(&from, context);
+        let bu = BigUint::from_bytes_be(&bytes);
+        U64Value {
+            value: bu.to_u64().unwrap(),
+            original: from,
+        }
+    }
+}
 
+pub enum CheckValue<T: InterpretableFrom<ValueSubTree>> {
+    DefaultStar,
+    Star,
+    Equal(T),
+}
+
+impl<T: InterpretableFrom<ValueSubTree>> CheckValue<T> {
+    pub fn is_star(&self) -> bool {
+        if let CheckValue::Star | CheckValue::DefaultStar = self { true } else { false }
+    }
+
+    pub fn is_default_star(&self) -> bool {
+        if let CheckValue::DefaultStar = self { true } else { false }
+    }
+}
+
+impl<T: InterpretableFrom<ValueSubTree>> Default for CheckValue<T> {
+    fn default() -> Self {
+        CheckValue::DefaultStar
+    }
+}
+
+impl<T: InterpretableFrom<ValueSubTree>> InterpretableFrom<ValueSubTree> for CheckValue<T> {
+    fn interpret_from(from: ValueSubTree, context: &InterpreterContext) -> Self {
+        if let ValueSubTree::Str(s) = &from {
+            if s == "" {
+                return CheckValue::DefaultStar;
+            } else if s == "*" {
+                return CheckValue::Star;
+            }
+        }
+
+        CheckValue::Equal(T::interpret_from(from, context))
+    }
+}

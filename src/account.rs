@@ -23,7 +23,7 @@ impl InterpretableFrom<AccountRaw> for Account {
 
 pub enum CheckStorage {
     Star,
-    Equal(BTreeMap<String, CheckBytesValue>)
+    Equal(BTreeMap<String, CheckValue<BytesValue>>),
 }
 
 impl InterpretableFrom<CheckStorageRaw> for CheckStorage {
@@ -31,7 +31,7 @@ impl InterpretableFrom<CheckStorageRaw> for CheckStorage {
         match from {
             CheckStorageRaw::Star => CheckStorage::Star,
             CheckStorageRaw::Equal(m) => CheckStorage::Equal(
-                m.into_iter().map(|(k, v)| (k.clone(), CheckBytesValue::interpret_from(v, context))).collect(),
+                m.into_iter().map(|(k, v)| (k.clone(), CheckValue::<BytesValue>::interpret_from(v, context))).collect(),
             )
         }
     }
@@ -44,22 +44,22 @@ impl CheckStorage {
 }
 pub struct CheckAccount {
     pub comment: Option<BytesValue>,
-    pub nonce: CheckU64Value,
-    pub balance: CheckBigUintValue,
+    pub nonce: CheckValue<U64Value>,
+    pub balance: CheckValue<BigUintValue>,
     pub storage: CheckStorage,
-    pub code: Option<CheckBytesValue>,
-    pub async_call_data: CheckBytesValue,
+    pub code: Option<CheckValue<BytesValue>>,
+    pub async_call_data: CheckValue<BytesValue>,
 }
 
 impl InterpretableFrom<CheckAccountRaw> for CheckAccount {
     fn interpret_from(from: CheckAccountRaw, context: &InterpreterContext) -> Self {
         CheckAccount {
             comment: from.comment.map(|c| BytesValue::interpret_from(c, context)),
-            nonce: CheckU64Value::interpret_from(from.nonce, context),
-            balance: CheckBigUintValue::interpret_from(from.balance, context),
+            nonce: CheckValue::<U64Value>::interpret_from(from.nonce, context),
+            balance: CheckValue::<BigUintValue>::interpret_from(from.balance, context),
             storage: CheckStorage::interpret_from(from.storage, context),
-            code: from.code.map(|c| CheckBytesValue::interpret_from(c, context)),
-            async_call_data: CheckBytesValue::interpret_from(from.async_call_data, context),
+            code: from.code.map(|c| CheckValue::<BytesValue>::interpret_from(c, context)),
+            async_call_data: CheckValue::<BytesValue>::interpret_from(from.async_call_data, context),
         }
     }
 }
