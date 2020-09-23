@@ -9,7 +9,7 @@ use std::io::Write;
 use serde::Serialize;
 
 #[test]
-fn test_de_ser() {
+fn test_scenario_raw_ser_de() {
 
     let contents = fs::read_to_string("./example.scen.json").unwrap();
 

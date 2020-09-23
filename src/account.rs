@@ -1,6 +1,7 @@
 use super::*;
 use std::collections::BTreeMap;
 
+#[derive(Debug)]
 pub struct Account {
     pub comment: Option<BytesValue>,
     pub nonce: U64Value,
@@ -21,6 +22,7 @@ impl InterpretableFrom<AccountRaw> for Account {
     }
 }
 
+#[derive(Debug)]
 pub enum CheckStorage {
     Star,
     Equal(BTreeMap<String, CheckValue<BytesValue>>),
@@ -42,6 +44,8 @@ impl CheckStorage {
         if let CheckStorage::Star = self { true } else { false }
     }
 }
+
+#[derive(Debug)]
 pub struct CheckAccount {
     pub comment: Option<BytesValue>,
     pub nonce: CheckValue<U64Value>,
@@ -64,16 +68,19 @@ impl InterpretableFrom<CheckAccountRaw> for CheckAccount {
     }
 }
 
+#[derive(Debug)]
 pub struct CheckAccounts {
     pub other_accounts_allowed: bool,
-    pub accounts: BTreeMap<String, CheckAccount>
+    pub accounts: BTreeMap<AddressKey, CheckAccount>
 }
 
 impl InterpretableFrom<CheckAccountsRaw> for CheckAccounts {
     fn interpret_from(from: CheckAccountsRaw, context: &InterpreterContext) -> Self {
         CheckAccounts {
             other_accounts_allowed: from.other_accounts_allowed,
-            accounts: from.accounts.into_iter().map(|(k, v)| (k.clone(), CheckAccount::interpret_from(v, context))).collect(),
+            accounts: from.accounts.into_iter().map(|(k, v)| (
+                AddressKey::interpret_from(k, context), 
+                CheckAccount::interpret_from(v, context))).collect(),
         }
     }
 }

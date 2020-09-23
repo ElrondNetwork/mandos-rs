@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Debug)]
 pub struct CheckLog {
     pub address: BytesValue,
     pub identifier: BytesValue,
@@ -18,6 +19,7 @@ impl InterpretableFrom<CheckLogRaw> for CheckLog {
     }
 }
 
+#[derive(Debug)]
 pub enum CheckLogs {
     Star,
     List(Vec<CheckLog>),

@@ -1,6 +1,7 @@
 use super::*;
 use std::collections::BTreeMap;
 
+#[derive(Debug)]
 pub struct Scenario {
     pub name: Option<String>,
     pub comment: Option<String>,
@@ -8,13 +9,25 @@ pub struct Scenario {
     pub steps: Vec<Step>,
 }
 
+impl InterpretableFrom<ScenarioRaw> for Scenario {
+    fn interpret_from(from: ScenarioRaw, context: &InterpreterContext) -> Self {
+        Scenario {
+            name: from.name,
+            comment: from.comment,
+            check_gas: from.check_gas,
+            steps: from.steps.into_iter().map(|s| Step::interpret_from(s, context)).collect(),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum Step {
     ExternalSteps {
         path: String,
     },
     SetState {
         comment: Option<String>,
-        accounts: BTreeMap<String, Account>,
+        accounts: BTreeMap<AddressKey, Account>,
         new_addresses: Vec<NewAddress>,
         block_hashes: Vec<BytesValue>,
         previous_block_info: Option<BlockInfo>,
@@ -68,7 +81,9 @@ impl InterpretableFrom<StepRaw> for Step {
                 current_block_info,
             } => Step::SetState {
                 comment,
-                accounts: accounts.into_iter().map(|(k, v)| (k.clone(), Account::interpret_from(v, context))).collect(),
+                accounts: accounts.into_iter().map(|(k, v)| (
+                    AddressKey::interpret_from(k, context),
+                    Account::interpret_from(v, context))).collect(),
                 new_addresses: new_addresses.into_iter().map(|t| NewAddress::interpret_from(t, context)).collect(),
                 block_hashes: block_hashes.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
                 previous_block_info: previous_block_info.map(|v| BlockInfo::interpret_from(v, context)),
@@ -130,6 +145,7 @@ impl InterpretableFrom<StepRaw> for Step {
     }
 }
 
+#[derive(Debug)]
 pub struct NewAddress {
     pub creator_address: BytesValue,
     pub creator_nonce: U64Value,
@@ -146,6 +162,7 @@ impl InterpretableFrom<NewAddressRaw> for NewAddress {
     }
 }
 
+#[derive(Debug)]
 pub struct BlockInfo {
     pub block_timestamp: Option<U64Value>,
     pub block_nonce: Option<U64Value>,
@@ -164,9 +181,10 @@ impl InterpretableFrom<BlockInfoRaw> for BlockInfo {
     }
 }
 
+#[derive(Debug)]
 pub struct TxCall {
-    pub from: BytesValue,
-    pub to: BytesValue,
+    pub from: AddressValue,
+    pub to: AddressValue,
     pub value: BigUintValue,
     pub function: String,
     pub arguments: Vec<BytesValue>,
@@ -177,8 +195,8 @@ pub struct TxCall {
 impl InterpretableFrom<TxCallRaw> for TxCall {
     fn interpret_from(from: TxCallRaw, context: &InterpreterContext) -> Self {
         TxCall {
-            from: BytesValue::interpret_from(from.from, context),
-            to: BytesValue::interpret_from(from.to, context),
+            from: AddressValue::interpret_from(from.from, context),
+            to: AddressValue::interpret_from(from.to, context),
             value: BigUintValue::interpret_from(from.value, context),
             function: from.function,
             arguments: from.arguments.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
@@ -188,8 +206,9 @@ impl InterpretableFrom<TxCallRaw> for TxCall {
     }
 }
 
+#[derive(Debug)]
 pub struct TxDeploy {
-    pub from: BytesValue,
+    pub from: AddressValue,
     pub value: BigUintValue,
     pub contract_code: BytesValue,
     pub arguments: Vec<BytesValue>,
@@ -200,7 +219,7 @@ pub struct TxDeploy {
 impl InterpretableFrom<TxDeployRaw> for TxDeploy {
     fn interpret_from(from: TxDeployRaw, context: &InterpreterContext) -> Self {
         TxDeploy {
-            from: BytesValue::interpret_from(from.from, context),
+            from: AddressValue::interpret_from(from.from, context),
             value: BigUintValue::interpret_from(from.value, context),
             contract_code: BytesValue::interpret_from(from.contract_code, context),
             arguments: from.arguments.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
@@ -210,36 +229,39 @@ impl InterpretableFrom<TxDeployRaw> for TxDeploy {
     }
 }
 
+#[derive(Debug)]
 pub struct TxTransfer {
-    pub from: BytesValue,
-    pub to: BytesValue,
+    pub from: AddressValue,
+    pub to: AddressValue,
     pub value: BigUintValue,
 }
 
 impl InterpretableFrom<TxTransferRaw> for TxTransfer {
     fn interpret_from(from: TxTransferRaw, context: &InterpreterContext) -> Self {
         TxTransfer {
-            from: BytesValue::interpret_from(from.from, context),
-            to: BytesValue::interpret_from(from.to, context),
+            from: AddressValue::interpret_from(from.from, context),
+            to: AddressValue::interpret_from(from.to, context),
             value: BigUintValue::interpret_from(from.value, context),
         }
     }
 }
 
+#[derive(Debug)]
 pub struct TxValidatorReward {
-    pub to: BytesValue,
+    pub to: AddressValue,
     pub value: BigUintValue,
 }
 
 impl InterpretableFrom<TxValidatorRewardRaw> for TxValidatorReward {
     fn interpret_from(from: TxValidatorRewardRaw, context: &InterpreterContext) -> Self {
         TxValidatorReward {
-            to: BytesValue::interpret_from(from.to, context),
+            to: AddressValue::interpret_from(from.to, context),
             value: BigUintValue::interpret_from(from.value, context),
         }
     }
 }
 
+#[derive(Debug)]
 pub struct TxExpect {
     pub out: Vec<BytesValue>,
     pub status: U64Value,

@@ -1,5 +1,6 @@
 use super::value_interpreter::*;
 use super::value_raw::*;
+use super::context::*;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 
@@ -43,6 +44,7 @@ impl InterpretableFrom<ValueSubTree> for BytesValue {
     }
 }
 
+#[derive(Debug)]
 pub struct BigUintValue {
     pub value: BigUint,
     pub original: ValueSubTree,
@@ -58,6 +60,7 @@ impl InterpretableFrom<ValueSubTree> for BigUintValue {
     }
 }
 
+#[derive(Debug)]
 pub struct U64Value {
     pub value: u64,
     pub original: ValueSubTree,
@@ -74,6 +77,7 @@ impl InterpretableFrom<ValueSubTree> for U64Value {
     }
 }
 
+#[derive(Debug)]
 pub enum CheckValue<T: InterpretableFrom<ValueSubTree>> {
     DefaultStar,
     Star,

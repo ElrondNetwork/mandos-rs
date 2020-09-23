@@ -1,18 +1,11 @@
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::identities::Zero;
-
-pub struct InterpreterContext{}
-
-impl Default for InterpreterContext {
-    fn default() -> Self {
-        InterpreterContext{}
-    }
-}
+use super::context::*;
 
 const STR_PREFIXES: [&'static str; 3] = ["str:", "``", "''"];
 
 const ADDR_PREFIX: &str = "address:";
-// const filePrefix = "file:"
+const FILE_PREFIX: &str = "file:";
 // const keccak256Prefix = "keccak256:"
 
 // const u64Prefix = "u64:"
@@ -57,6 +50,10 @@ pub fn interpret_string(s: &str, context: &InterpreterContext) -> Vec<u8> {
         return address(&s[ADDR_PREFIX.len() .. ]);
     }
 
+    if s.starts_with(FILE_PREFIX) {
+        return s.as_bytes().to_vec();
+    }
+
     if s.starts_with("+") {
         let bi = BigInt::from_biguint(Sign::Plus, parse_unsigned(&s[1..]));
         return big_int_to_bytes_be(&bi);
@@ -88,7 +85,11 @@ fn parse_unsigned(s: &str) -> BigUint {
         return BigUint::parse_bytes(clean.as_bytes(), 2).unwrap();
     }
 
-    BigUint::parse_bytes(clean.as_bytes(), 10).unwrap()
+    if let Some(bu) = BigUint::parse_bytes(clean.as_bytes(), 10) {
+        bu
+    } else {
+        panic!("Could not parse base 10 number: {}", clean)
+    }
 }
 
 fn big_uint_to_bytes_be(bu: &BigUint) -> Vec<u8> {
