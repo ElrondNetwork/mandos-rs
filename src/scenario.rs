@@ -147,17 +147,17 @@ impl InterpretableFrom<StepRaw> for Step {
 
 #[derive(Debug)]
 pub struct NewAddress {
-    pub creator_address: BytesValue,
+    pub creator_address: AddressValue,
     pub creator_nonce: U64Value,
-    pub new_address: BytesValue,
+    pub new_address: AddressValue,
 }
 
 impl InterpretableFrom<NewAddressRaw> for NewAddress {
     fn interpret_from(from: NewAddressRaw, context: &InterpreterContext) -> Self {
         NewAddress {
-            creator_address: BytesValue::interpret_from(from.creator_address, context),
+            creator_address: AddressValue::interpret_from(from.creator_address, context),
             creator_nonce: U64Value::interpret_from(from.creator_nonce, context),
-            new_address: BytesValue::interpret_from(from.new_address, context),
+            new_address: AddressValue::interpret_from(from.new_address, context),
         }
     }
 }
@@ -263,7 +263,7 @@ impl InterpretableFrom<TxValidatorRewardRaw> for TxValidatorReward {
 
 #[derive(Debug)]
 pub struct TxExpect {
-    pub out: Vec<BytesValue>,
+    pub out: Vec<CheckValue<BytesValue>>,
     pub status: U64Value,
     pub logs: CheckLogs,
     pub message: Option<BytesValue>,
@@ -275,7 +275,7 @@ pub struct TxExpect {
 impl InterpretableFrom<TxExpectRaw> for TxExpect {
     fn interpret_from(from: TxExpectRaw, context: &InterpreterContext) -> Self {
         TxExpect {
-            out: from.out.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
+            out: from.out.into_iter().map(|t| CheckValue::<BytesValue>::interpret_from(t, context)).collect(),
             status: U64Value::interpret_from(from.status, context),
             logs: CheckLogs::interpret_from(from.logs, context),
             message: from.message.map(|v| BytesValue::interpret_from(v, context)),

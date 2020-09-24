@@ -1,6 +1,7 @@
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::identities::Zero;
 use super::context::*;
+use super::value_raw::*;
 
 const STR_PREFIXES: [&'static str; 3] = ["str:", "``", "''"];
 
@@ -16,6 +17,26 @@ const FILE_PREFIX: &str = "file:";
 // const i32Prefix = "i32:"
 // const i16Prefix = "i16:"
 // const i8Prefix = "i8:"
+
+pub fn interpret_subtree(vst: &ValueSubTree, context: &InterpreterContext) -> Vec<u8> {
+    match vst {
+        ValueSubTree::Str(s) => interpret_string(s, context),
+        ValueSubTree::List(l) => {
+            let mut concat = Vec::<u8>::new();
+            for item in l.iter() {
+                concat.extend_from_slice(interpret_subtree(item, context).as_slice());
+            }
+            concat
+        },
+        ValueSubTree::Map(m) => {
+            let mut concat = Vec::<u8>::new();
+            for (_, value) in m.iter() {
+                concat.extend_from_slice(interpret_subtree(value, context).as_slice());
+            }
+            concat
+        }
+    }
+}
 
 pub fn interpret_string(s: &str, context: &InterpreterContext) -> Vec<u8> {
     if s.is_empty() {
