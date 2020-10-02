@@ -185,7 +185,7 @@ impl InterpretableFrom<BlockInfoRaw> for BlockInfo {
 pub struct TxCall {
     pub from: AddressValue,
     pub to: AddressValue,
-    pub value: BigUintValue,
+    pub call_value: BigUintValue,
     pub function: String,
     pub arguments: Vec<BytesValue>,
     pub gas_limit: U64Value,
@@ -197,7 +197,7 @@ impl InterpretableFrom<TxCallRaw> for TxCall {
         TxCall {
             from: AddressValue::interpret_from(from.from, context),
             to: AddressValue::interpret_from(from.to, context),
-            value: BigUintValue::interpret_from(from.value, context),
+            call_value: BigUintValue::interpret_from(from.value, context),
             function: from.function,
             arguments: from.arguments.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
             gas_limit: U64Value::interpret_from(from.gas_limit, context),
@@ -209,7 +209,7 @@ impl InterpretableFrom<TxCallRaw> for TxCall {
 #[derive(Debug)]
 pub struct TxDeploy {
     pub from: AddressValue,
-    pub value: BigUintValue,
+    pub call_value: BigUintValue,
     pub contract_code: BytesValue,
     pub arguments: Vec<BytesValue>,
     pub gas_limit: U64Value,
@@ -220,7 +220,7 @@ impl InterpretableFrom<TxDeployRaw> for TxDeploy {
     fn interpret_from(from: TxDeployRaw, context: &InterpreterContext) -> Self {
         TxDeploy {
             from: AddressValue::interpret_from(from.from, context),
-            value: BigUintValue::interpret_from(from.value, context),
+            call_value: BigUintValue::interpret_from(from.value, context),
             contract_code: BytesValue::interpret_from(from.contract_code, context),
             arguments: from.arguments.into_iter().map(|t| BytesValue::interpret_from(t, context)).collect(),
             gas_limit: U64Value::interpret_from(from.gas_limit, context),

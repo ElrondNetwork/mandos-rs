@@ -1,5 +1,6 @@
 use super::*;
 use std::cmp::Ordering;
+use std::fmt;
 
 #[derive(Debug, Eq)]
 pub struct AddressKey {
@@ -39,6 +40,12 @@ impl InterpretableFrom<String> for AddressKey {
     }
 }
 
+impl fmt::Display for AddressKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.original.fmt(f)
+    }
+}
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct AddressValue {
     pub value: [u8; 32],
@@ -57,5 +64,11 @@ impl InterpretableFrom<ValueSubTree> for AddressValue {
             value,
             original: from,
         }
+    }
+}
+
+impl fmt::Display for AddressValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.original.fmt(f)
     }
 }
