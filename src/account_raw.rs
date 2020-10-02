@@ -10,7 +10,7 @@ use serde::de::{self, Deserializer, Visitor, MapAccess};
 pub struct AccountRaw {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub comment: Option<ValueSubTree>,
+    pub comment: Option<String>,
 
     pub nonce: ValueSubTree,
     pub balance: ValueSubTree,
@@ -102,7 +102,7 @@ impl<'de> Deserialize<'de> for CheckStorageRaw {
 pub struct CheckAccountRaw {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub comment: Option<ValueSubTree>,
+    pub comment: Option<String>,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "ValueSubTree::is_empty_string")]

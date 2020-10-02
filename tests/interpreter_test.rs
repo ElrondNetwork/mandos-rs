@@ -45,6 +45,11 @@ fn test_unsigned_number() {
     let context = &InterpreterContext::default();
 
     assert_eq!(vec![0x12, 0x34], interpret_string("0x1234", context));
+    assert_eq!(vec![0x00], interpret_string("0x0", context));
+    assert_eq!(vec![0x00], interpret_string("0x00", context));
+    assert_eq!(vec![0x00, 0x00], interpret_string("0x000", context));
+    assert_eq!(vec![0x00, 0x00], interpret_string("0x0000", context));
+    assert_eq!(vec![0x00, 0x00, 0xab], interpret_string("0x0000ab", context));
     assert_eq!(EMPTY, interpret_string("0x", context));
     assert_eq!(EMPTY, interpret_string("0", context));
     assert_eq!(vec![12], interpret_string("12", context));

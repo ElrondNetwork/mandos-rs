@@ -35,32 +35,32 @@ pub enum Step {
     },
     ScCall {
         tx_id: String,
-        comment: Option<BytesValue>,
+        comment: Option<String>,
         tx: TxCall,
         expect: Option<TxExpect>,
     },
     ScDeploy {
         tx_id: String,
-        comment: Option<BytesValue>,
+        comment: Option<String>,
         tx: TxDeploy,
         expect: Option<TxExpect>,
     },
     Transfer {
         tx_id: String,
-        comment: Option<BytesValue>,
+        comment: Option<String>,
         tx: TxTransfer,
     },
     ValidatorReward {
         tx_id: String,
-        comment: Option<BytesValue>,
+        comment: Option<String>,
         tx: TxValidatorReward,
     },
     CheckState {
-        comment: Option<BytesValue>,
+        comment: Option<String>,
         accounts: CheckAccounts,
     },
     DumpState {
-        comment: Option<BytesValue>,
+        comment: Option<String>,
     },
 }
 
@@ -96,7 +96,7 @@ impl InterpretableFrom<StepRaw> for Step {
                 expect,
             } => Step::ScCall {
                 tx_id,
-                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                comment,
                 tx: TxCall::interpret_from(tx, context),
                 expect: expect.map(|v| TxExpect::interpret_from(v, context)),
             },
@@ -107,7 +107,7 @@ impl InterpretableFrom<StepRaw> for Step {
                 expect,
             } => Step::ScDeploy {
                 tx_id,
-                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                comment,
                 tx: TxDeploy::interpret_from(tx, context),
                 expect: expect.map(|v| TxExpect::interpret_from(v, context)),
             },
@@ -117,7 +117,7 @@ impl InterpretableFrom<StepRaw> for Step {
                 tx,
             } => Step::Transfer {
                 tx_id,
-                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                comment,
                 tx: TxTransfer::interpret_from(tx, context),
             },
             StepRaw::ValidatorReward {
@@ -126,20 +126,20 @@ impl InterpretableFrom<StepRaw> for Step {
                 tx,
             } => Step::ValidatorReward {
                 tx_id,
-                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                comment,
                 tx: TxValidatorReward::interpret_from(tx, context),
             },
             StepRaw::CheckState {
                 comment,
                 accounts,
             } => Step::CheckState {
-                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                comment,
                 accounts: CheckAccounts::interpret_from(accounts, context),
             },
             StepRaw::DumpState {
                 comment,
             } => Step::DumpState {
-                comment: comment.map(|v| BytesValue::interpret_from(v, context)),
+                comment,
             },
         }
     }

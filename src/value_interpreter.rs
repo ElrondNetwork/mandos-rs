@@ -76,38 +76,41 @@ pub fn interpret_string(s: &str, context: &InterpreterContext) -> Vec<u8> {
     }
 
     if s.starts_with("+") {
-        let bi = BigInt::from_biguint(Sign::Plus, parse_unsigned(&s[1..]));
+        let bi = BigInt::from_bytes_be(Sign::Plus, parse_unsigned(&s[1..]).as_slice());
         return big_int_to_bytes_be(&bi);
     }
 
     if s.starts_with("-") {
-        let bi = BigInt::from_biguint(Sign::Minus, parse_unsigned(&s[1..]));
+        let bi = BigInt::from_bytes_be(Sign::Minus, parse_unsigned(&s[1..]).as_slice());
         return big_int_to_bytes_be(&bi);
     }
 
-    big_uint_to_bytes_be(&parse_unsigned(s))
+    parse_unsigned(s)
 }
 
-fn parse_unsigned(s: &str) -> BigUint {
+fn parse_unsigned(s: &str) -> Vec<u8> {
     let clean = s.replace(&['_', ','][..], "");
     if clean.starts_with("0x") || clean.starts_with("0X") {
         let clean = &clean[2..];
-        if clean.is_empty() {
-            return BigUint::zero();
+        return if clean.len() % 2 == 0 {
+            hex::decode(clean).unwrap()
+        } else {
+            let even_bytes = format!("0{}", clean);
+            hex::decode(&even_bytes[..]).unwrap()
         }
-        return BigUint::parse_bytes(clean.as_bytes(), 16).unwrap();
     }
 
     if clean.starts_with("0b") || clean.starts_with("0B") {
         let clean = &clean[2..];
         if clean.is_empty() {
-            return BigUint::zero();
+            return Vec::new();
         }
-        return BigUint::parse_bytes(clean.as_bytes(), 2).unwrap();
+        let bu = BigUint::parse_bytes(clean.as_bytes(), 2).unwrap();
+        return big_uint_to_bytes_be(&bu);
     }
 
     if let Some(bu) = BigUint::parse_bytes(clean.as_bytes(), 10) {
-        bu
+        big_uint_to_bytes_be(&bu)
     } else {
         panic!("Could not parse base 10 number: {}", clean)
     }
