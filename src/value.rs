@@ -16,6 +16,24 @@ pub struct BytesValue {
     pub original: ValueSubTree,
 }
 
+impl BytesValue {
+    pub fn empty() -> Self {
+        BytesValue {
+            value: Vec::new(),
+            original: ValueSubTree::Str(String::default())
+        }
+    }
+}
+
+impl From<Vec<u8>> for BytesValue {
+    fn from(v: Vec<u8>) -> Self {
+        BytesValue {
+            value: v,
+            original: ValueSubTree::Str(String::default())
+        }
+    }
+}
+
 impl InterpretableFrom<ValueSubTree> for BytesValue {
     fn interpret_from(from: ValueSubTree, context: &InterpreterContext) -> Self {
         BytesValue {
@@ -82,6 +100,15 @@ pub struct BytesKey {
     pub original: String,
 }
 
+impl From<Vec<u8>> for BytesKey {
+    fn from(v: Vec<u8>) -> Self {
+        BytesKey {
+            value: v,
+            original: String::default()
+        }
+    }
+}
+
 impl PartialEq for BytesKey {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
@@ -101,7 +128,6 @@ impl Ord for BytesKey {
         self.value.cmp(&other.value)
     }
 }
-
 
 impl InterpretableFrom<String> for BytesKey {
     fn interpret_from(from: String, context: &InterpreterContext) -> Self {
