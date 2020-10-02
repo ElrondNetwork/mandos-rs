@@ -2,6 +2,7 @@ use super::value::*;
 use super::value_raw::*;
 use super::context::*;
 use num_bigint::BigUint;
+use std::fmt;
 
 pub trait Checkable<V> {
     fn check(&self, value: V) -> bool;
@@ -59,6 +60,18 @@ impl<T: InterpretableFrom<ValueSubTree>> InterpretableFrom<ValueSubTree> for Che
         }
 
         CheckValue::Equal(T::interpret_from(from, context))
+    }
+}
+
+impl<T: fmt::Display> fmt::Display for CheckValue<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CheckValue::Star | CheckValue::DefaultStar =>
+                write!(f, "*"),
+            CheckValue::Equal(eq_value) =>
+                eq_value.fmt(f)
+        }
+        
     }
 }
 

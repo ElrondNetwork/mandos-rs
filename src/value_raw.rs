@@ -106,6 +106,12 @@ impl<'de> Deserialize<'de> for ValueSubTree {
     }
 }
 
+impl fmt::Display for ValueSubTree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string(self).unwrap())
+    }
+}
+
 pub enum CheckBytesValueRaw {
     DefaultStar,
     Star,
@@ -185,5 +191,17 @@ impl<'de> Deserialize<'de> for CheckBytesValueRaw {
         D: Deserializer<'de>,
     {
         deserializer.deserialize_any(CheckBytesValueRawVisitor)
+    }
+}
+
+impl fmt::Display for CheckBytesValueRaw {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CheckBytesValueRaw::Star | CheckBytesValueRaw::DefaultStar =>
+                write!(f, "*"),
+            CheckBytesValueRaw::Equal(bytes_value) =>
+                bytes_value.fmt(f)
+        }
+        
     }
 }

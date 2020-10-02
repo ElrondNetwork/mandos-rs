@@ -6,7 +6,7 @@ pub struct Account {
     pub comment: Option<BytesValue>,
     pub nonce: U64Value,
     pub balance: BigUintValue,
-    pub storage: BTreeMap<String, BytesValue>,
+    pub storage: BTreeMap<BytesKey, BytesValue>,
     pub code: Option<BytesValue>,
 }
 
@@ -16,7 +16,9 @@ impl InterpretableFrom<AccountRaw> for Account {
             comment: from.comment.map(|c| BytesValue::interpret_from(c, context)),
             nonce: U64Value::interpret_from(from.nonce, context),
             balance: BigUintValue::interpret_from(from.balance, context),
-            storage: from.storage.into_iter().map(|(k, v)| (k.clone(), BytesValue::interpret_from(v, context))).collect(),
+            storage: from.storage.into_iter().map(|(k, v)| (
+                BytesKey::interpret_from(k, context), 
+                BytesValue::interpret_from(v, context))).collect(),
             code: from.code.map(|c| BytesValue::interpret_from(c, context)),
         }
     }
