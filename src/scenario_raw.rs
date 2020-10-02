@@ -56,7 +56,7 @@ pub enum StepRaw {
 
     #[serde(rename_all = "camelCase")]
     ScCall {
-        tx_id: ValueSubTree,
+        tx_id: String,
 
         #[serde(default)]
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -71,7 +71,7 @@ pub enum StepRaw {
 
     #[serde(rename_all = "camelCase")]
     ScDeploy {
-        tx_id: ValueSubTree,
+        tx_id: String,
 
         #[serde(default)]
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -86,7 +86,7 @@ pub enum StepRaw {
 
     #[serde(rename_all = "camelCase")]
     Transfer {
-        tx_id: ValueSubTree,
+        tx_id: String,
 
         #[serde(default)]
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -97,7 +97,7 @@ pub enum StepRaw {
 
     #[serde(rename_all = "camelCase")]
     ValidatorReward {
-        tx_id: ValueSubTree,
+        tx_id: String,
 
         #[serde(default)]
         #[serde(skip_serializing_if = "Option::is_none")]
