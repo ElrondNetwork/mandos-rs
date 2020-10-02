@@ -9,14 +9,14 @@ const ADDR_PREFIX: &str = "address:";
 const FILE_PREFIX: &str = "file:";
 // const keccak256Prefix = "keccak256:"
 
-// const u64Prefix = "u64:"
-// const u32Prefix = "u32:"
-// const u16Prefix = "u16:"
-// const u8Prefix = "u8:"
-// const i64Prefix = "i64:"
-// const i32Prefix = "i32:"
-// const i16Prefix = "i16:"
-// const i8Prefix = "i8:"
+const U64_PREFIX: &str = "u64:";
+const U32_PREFIX: &str = "u32:";
+const U16_PREFIX: &str = "u16:";
+const U8_PREFIX : &str = "u8:";
+const I64_PREFIX: &str = "i64:";
+const I32_PREFIX: &str = "i32:";
+const I16_PREFIX: &str = "i16:";
+const I8_PREFIX : &str = "i8:";
 
 pub fn interpret_subtree(vst: &ValueSubTree, context: &InterpreterContext) -> Vec<u8> {
     match vst {
@@ -75,6 +75,10 @@ pub fn interpret_string(s: &str, context: &InterpreterContext) -> Vec<u8> {
         return s.as_bytes().to_vec();
     }
 
+    if let Some(fixed_width) = try_parse_fixed_width(s) {
+        return fixed_width;
+    }
+
     if s.starts_with('+') {
         let bi = BigInt::from_bytes_be(Sign::Plus, parse_unsigned(&s[1..]).as_slice());
         return big_int_to_bytes_be(&bi);
@@ -86,6 +90,82 @@ pub fn interpret_string(s: &str, context: &InterpreterContext) -> Vec<u8> {
     }
 
     parse_unsigned(s)
+}
+
+fn try_parse_fixed_width(s: &str) -> Option<Vec<u8>> {
+    if s.starts_with(U64_PREFIX) {
+        return Some(parse_fixed_width_unsigned(&s[U64_PREFIX.len()..], 8));
+    }
+
+    if s.starts_with(U32_PREFIX) {
+        return Some(parse_fixed_width_unsigned(&s[U32_PREFIX.len()..], 4));
+    }
+
+    if s.starts_with(U16_PREFIX) {
+        return Some(parse_fixed_width_unsigned(&s[U16_PREFIX.len()..], 2));
+    }
+
+    if s.starts_with(U8_PREFIX) {
+        return Some(parse_fixed_width_unsigned(&s[U8_PREFIX.len()..], 1));
+    }
+
+    if s.starts_with(I64_PREFIX) {
+        return Some(parse_fixed_width_signed(&s[I64_PREFIX.len()..], 8));
+    }
+
+    if s.starts_with(I32_PREFIX) {
+        return Some(parse_fixed_width_signed(&s[I32_PREFIX.len()..], 4));
+    }
+
+    if s.starts_with(I16_PREFIX) {
+        return Some(parse_fixed_width_signed(&s[I16_PREFIX.len()..], 2));
+    }
+
+    if s.starts_with(I8_PREFIX) {
+        return Some(parse_fixed_width_signed(&s[I8_PREFIX.len()..], 1));
+    }
+
+    None
+}
+
+fn parse_fixed_width_signed(s: &str, length: usize) -> Vec<u8> {
+    if s.starts_with('-') {
+        let mut result = vec![0xffu8; length];
+        let bi = BigInt::from_bytes_be(Sign::Minus, parse_unsigned(&s[1..]).as_slice());
+        let bytes = bi.to_signed_bytes_be();
+        assert!(
+            bytes.len() <= length,
+            "representation of {} does not fit in {} bytes",
+            s, length);
+        let offset = length - bytes.len();
+        if !bytes.is_empty() {
+            result[offset..].clone_from_slice(&bytes[..]);
+        }
+        result
+    } else {
+        let s = if s.starts_with('+') { &s[1..] } else { s };
+        let result = parse_fixed_width_unsigned(s, length);
+        if !result.is_empty() && result[0] >> 7 == 1 {
+            panic!("representation of {} does not fit in {} bytes",
+                s, length);
+        }
+        result
+    }
+}
+
+fn parse_fixed_width_unsigned(s: &str, length: usize) -> Vec<u8> {
+    let parsed = parse_unsigned(s);
+    assert!(
+        parsed.len() <= length,
+        "representation of {} does not fit in {} bytes",
+        s, length);
+
+    let mut result = vec![0u8; length];
+    let offset = length - parsed.len();
+    if !parsed.is_empty() {
+        result[offset..].clone_from_slice(&parsed[..]);
+    }
+    result
 }
 
 fn parse_unsigned(s: &str) -> Vec<u8> {

@@ -71,3 +71,56 @@ fn test_signed_number() {
     assert_eq!(vec![0xff, 0x00], interpret_string("-256", context));
     assert_eq!(vec![0xfb], interpret_string("-0b101", context));
 }
+
+#[test]
+fn test_unsigned_fixed_width() {
+    let context = &InterpreterContext::default();
+
+	assert_eq!(vec![0x00], interpret_string("u8:0", context));
+	assert_eq!(vec![0x00, 0x00], interpret_string("u16:0", context));
+	assert_eq!(vec![0x00, 0x00, 0x00, 0x00], interpret_string("u32:0", context));
+	assert_eq!(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], interpret_string("u64:0", context));
+	assert_eq!(vec![0x12, 0x34], interpret_string("u16:0x1234", context));
+	assert_eq!(vec![0x00, 0x00, 0x12, 0x34], interpret_string("u32:0x1234", context));
+	assert_eq!(vec![0x01, 0x00], interpret_string("u16:256", context));
+	assert_eq!(vec![0x01], interpret_string("u8:0b1", context));
+	assert_eq!(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05], interpret_string("u64:0b101", context));
+}
+
+#[test]
+fn test_signed_fixed_width() {
+    let context = &InterpreterContext::default();
+
+	assert_eq!(vec![0x00], interpret_string("i8:0", context));
+	assert_eq!(vec![0x00, 0x00], interpret_string("i16:0", context));
+	assert_eq!(vec![0x00, 0x00, 0x00, 0x00], interpret_string("i32:0", context));
+	assert_eq!(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], interpret_string("i64:0", context));
+
+	assert_eq!(vec![0xff], interpret_string("i8:-1", context));
+	assert_eq!(vec![0xff, 0xff], interpret_string("i16:-1", context));
+	assert_eq!(vec![0xff, 0xff, 0xff, 0xff], interpret_string("i32:-1", context));
+	assert_eq!(vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], interpret_string("i64:-1", context));
+	assert_eq!(vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00], interpret_string("i64:-256", context));
+	assert_eq!(vec![0xfb], interpret_string("i8:-0b101", context));
+}
+
+#[test]
+#[should_panic]
+fn test_signed_fixed_width_panic_1() {
+    let context = &InterpreterContext::default();
+    interpret_string("i8:+255", context);
+}
+
+#[test]
+#[should_panic]
+fn test_signed_fixed_width_panic_2() {
+    let context = &InterpreterContext::default();
+    interpret_string("i8:0xff", context);
+}
+
+#[test]
+#[should_panic]
+fn test_signed_fixed_width_panic_3() {
+    let context = &InterpreterContext::default();
+    interpret_string("i8:-255", context);
+}
