@@ -1,6 +1,6 @@
 
-extern crate mandos_rs;
-use mandos_rs::*;
+extern crate mandos;
+use mandos::*;
 
 use std::fs;
 use std::fs::File;

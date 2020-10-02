@@ -1,6 +1,6 @@
 
-extern crate mandos_rs;
-use mandos_rs::*;
+extern crate mandos;
+use mandos::*;
 
 const EMPTY: Vec<u8> = Vec::<u8>::new();
 
