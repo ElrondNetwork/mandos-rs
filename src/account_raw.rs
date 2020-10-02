@@ -28,7 +28,7 @@ pub enum CheckStorageRaw {
 
 impl CheckStorageRaw {
     pub fn is_star(&self) -> bool {
-        if let CheckStorageRaw::Star = self { true } else { false }
+        matches!(self, CheckStorageRaw::Star)
     }
 }
 
@@ -205,12 +205,10 @@ impl<'de> Visitor<'de> for CheckAccountRawsVisitor {
         while let Some((key, value)) = access.next_entry()? {
             if key == "+" {
                 other_accounts_allowed = true;
+            } else if let CheckAccountRawOrNothing::Some(check_account) = value {
+                accounts.insert(key, check_account);
             } else {
-                if let CheckAccountRawOrNothing::Some(check_account) = value {
-                    accounts.insert(key, check_account);
-                } else {
-                    return Err(de::Error::custom("invalid CheckAccountRaw"))
-                }
+                return Err(de::Error::custom("invalid CheckAccountRaw"))
             }
         }
 

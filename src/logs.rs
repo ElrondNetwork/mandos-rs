@@ -27,7 +27,7 @@ pub enum CheckLogs {
 
 impl CheckLogs {
     pub fn is_star(&self) -> bool {
-        if let CheckLogs::Star = self { true } else { false }
+        matches!(self, CheckLogs::Star)
     }
 }
 

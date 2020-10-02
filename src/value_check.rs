@@ -35,11 +35,11 @@ pub enum CheckValue<T> {
 
 impl<T: InterpretableFrom<ValueSubTree>> CheckValue<T> {
     pub fn is_star(&self) -> bool {
-        if let CheckValue::Star | CheckValue::DefaultStar = self { true } else { false }
+        matches!(self, CheckValue::Star | CheckValue::DefaultStar)
     }
 
     pub fn is_default_star(&self) -> bool {
-        if let CheckValue::DefaultStar = self { true } else { false }
+        matches!(self, CheckValue::DefaultStar)
     }
 }
 

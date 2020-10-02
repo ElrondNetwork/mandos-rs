@@ -120,11 +120,11 @@ pub enum CheckBytesValueRaw {
 
 impl CheckBytesValueRaw {
     pub fn is_star(&self) -> bool {
-        if let CheckBytesValueRaw::Star | CheckBytesValueRaw::DefaultStar = self { true } else { false }
+        matches!(self, CheckBytesValueRaw::Star | CheckBytesValueRaw::DefaultStar)
     }
 
     pub fn is_default_star(&self) -> bool {
-        if let CheckBytesValueRaw::DefaultStar = self { true } else { false }
+        matches!(self, CheckBytesValueRaw::DefaultStar)
     }
 }
 

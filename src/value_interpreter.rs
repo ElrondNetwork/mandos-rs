@@ -3,7 +3,7 @@ use num_traits::identities::Zero;
 use super::context::*;
 use super::value_raw::*;
 
-const STR_PREFIXES: [&'static str; 3] = ["str:", "``", "''"];
+const STR_PREFIXES: [&str; 3] = ["str:", "``", "''"];
 
 const ADDR_PREFIX: &str = "address:";
 const FILE_PREFIX: &str = "file:";
@@ -75,12 +75,12 @@ pub fn interpret_string(s: &str, context: &InterpreterContext) -> Vec<u8> {
         return s.as_bytes().to_vec();
     }
 
-    if s.starts_with("+") {
+    if s.starts_with('+') {
         let bi = BigInt::from_bytes_be(Sign::Plus, parse_unsigned(&s[1..]).as_slice());
         return big_int_to_bytes_be(&bi);
     }
 
-    if s.starts_with("-") {
+    if s.starts_with('-') {
         let bi = BigInt::from_bytes_be(Sign::Minus, parse_unsigned(&s[1..]).as_slice());
         return big_int_to_bytes_be(&bi);
     }

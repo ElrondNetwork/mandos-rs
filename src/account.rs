@@ -27,7 +27,7 @@ impl InterpretableFrom<AccountRaw> for Account {
 #[derive(Debug)]
 pub enum CheckStorage {
     Star,
-    Equal(BTreeMap<String, CheckValue<BytesValue>>),
+    Equal(BTreeMap<BytesKey, CheckValue<BytesValue>>),
 }
 
 impl InterpretableFrom<CheckStorageRaw> for CheckStorage {
@@ -35,7 +35,9 @@ impl InterpretableFrom<CheckStorageRaw> for CheckStorage {
         match from {
             CheckStorageRaw::Star => CheckStorage::Star,
             CheckStorageRaw::Equal(m) => CheckStorage::Equal(
-                m.into_iter().map(|(k, v)| (k.clone(), CheckValue::<BytesValue>::interpret_from(v, context))).collect(),
+                m.into_iter().map(|(k, v)| (
+                    BytesKey::interpret_from(k, context), 
+                    CheckValue::<BytesValue>::interpret_from(v, context))).collect(),
             )
         }
     }
@@ -43,7 +45,7 @@ impl InterpretableFrom<CheckStorageRaw> for CheckStorage {
 
 impl CheckStorage {
     pub fn is_star(&self) -> bool {
-        if let CheckStorage::Star = self { true } else { false }
+        matches!(self, CheckStorage::Star)
     }
 }
 
