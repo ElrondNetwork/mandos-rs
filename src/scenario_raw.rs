@@ -203,6 +203,8 @@ pub struct TxExpectRaw {
 
     pub status: ValueSubTree,
 
+    #[serde(default)]
+    #[serde(skip_serializing_if = "CheckLogsRaw::is_default")]
     pub logs: CheckLogsRaw,
 
     #[serde(default)]
