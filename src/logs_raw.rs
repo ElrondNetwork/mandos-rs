@@ -45,7 +45,7 @@ impl Serialize for CheckLogsRaw {
         S: Serializer,
     {
         match self {
-            CheckLogsRaw::Star => serializer.serialize_str("*"),
+            CheckLogsRaw::Star | CheckLogsRaw::DefaultStar => serializer.serialize_str("*"),
             CheckLogsRaw::List(l) => {
                 let mut seq = serializer.serialize_seq(Some(l.len()))?;
                 for item in l {
@@ -53,7 +53,6 @@ impl Serialize for CheckLogsRaw {
                 }
                 seq.end()
             },
-            CheckLogsRaw::DefaultStar => serializer.serialize_str("This should be skipped.")
         }
     }
 }
