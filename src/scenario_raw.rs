@@ -204,8 +204,8 @@ pub struct TxExpectRaw {
     pub status: ValueSubTree,
 
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub logs: Option<CheckLogsRaw>,
+    #[serde(skip_serializing_if = "CheckLogsRaw::is_default")]
+    pub logs: CheckLogsRaw,
 
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]

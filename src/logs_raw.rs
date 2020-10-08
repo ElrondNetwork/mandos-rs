@@ -20,11 +20,22 @@ pub struct CheckLogRaw {
 pub enum CheckLogsRaw {
     Star,
     List(Vec<CheckLogRaw>),
+    DefaultStar,
 }
 
 impl CheckLogsRaw {
     pub fn is_star(&self) -> bool {
         matches!(self, CheckLogsRaw::Star)
+    }
+
+    pub fn is_default(&self) -> bool {
+        matches!(self, CheckLogsRaw::DefaultStar)
+    }
+}
+
+impl Default for CheckLogsRaw {
+    fn default() -> Self {
+        CheckLogsRaw::DefaultStar
     }
 }
 
@@ -42,6 +53,7 @@ impl Serialize for CheckLogsRaw {
                 }
                 seq.end()
             },
+            CheckLogsRaw::DefaultStar => serializer.serialize_str("This should be skipped.")
         }
     }
 }
