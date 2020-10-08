@@ -265,7 +265,7 @@ impl InterpretableFrom<TxValidatorRewardRaw> for TxValidatorReward {
 pub struct TxExpect {
     pub out: Vec<CheckValue<BytesValue>>,
     pub status: U64Value,
-    pub logs: CheckLogs,
+    pub logs: Option<CheckLogs>,
     pub message: Option<BytesValue>,
     pub gas: Option<CheckValue<U64Value>>,
     pub refund: Option<CheckValue<U64Value>>,
@@ -277,7 +277,7 @@ impl InterpretableFrom<TxExpectRaw> for TxExpect {
         TxExpect {
             out: from.out.into_iter().map(|t| CheckValue::<BytesValue>::interpret_from(t, context)).collect(),
             status: U64Value::interpret_from(from.status, context),
-            logs: CheckLogs::interpret_from(from.logs, context),
+            logs: from.logs.map(|v| CheckLogs::interpret_from(v, context)),
             message: from.message.map(|v| BytesValue::interpret_from(v, context)),
             gas: from.gas.map(|v| CheckValue::<U64Value>::interpret_from(v, context)),
             refund: from.refund.map(|v| CheckValue::<U64Value>::interpret_from(v, context)),
